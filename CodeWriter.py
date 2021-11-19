@@ -23,7 +23,6 @@ class CodeWriter:
         self.filename = None
         self.output = output_stream
         self.true_counter = 0
-        self.static_idx = 0
 
     def pop_from_stack(self):
         self.output.write("@SP\n"
@@ -129,8 +128,7 @@ class CodeWriter:
             elif segment == "static":
                 self.pop_from_stack()
                 self.output.write("@{0}.{1}\n"
-                                  "M=D\n".format(self.filename, self.static_idx))
-                self.static_idx += 1
+                                  "M=D\n".format(self.filename, index))
 
         elif command == "C_PUSH":
             if SEGMENTS[segment] == "CONST":
@@ -148,6 +146,10 @@ class CodeWriter:
             elif segment == "temp" or segment == "pointer":
                 self.output.write("@{0}\n"
                                   "D=M\n".format(SEGMENTS.get(segment) + index))
+            elif segment == "static":
+                self.output.write("@{0}.{1}\n"
+                                  "D = M\n".format(self.filename, index))
+
 
             self.push_to_stack("D")
 
