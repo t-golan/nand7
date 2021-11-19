@@ -67,7 +67,9 @@ class CodeWriter:
             self.output.write("D = D>>\n")
 
         else:  # command in ("add", "sub", "eq", "gt", "lt", "and", "or"):
-            self.output.write("@SP\nM = M-1\nA = M\n")
+            self.output.write("@R13\n"
+                              "M = D\n"
+                              "@SP\nM = M-1\nA = M\n")
             if command == "add":
                 self.output.write("D = D+M\n")
             elif command == "sub":
@@ -89,7 +91,6 @@ class CodeWriter:
                                   "@CONTINUE{0}\n"
                                   "0;JMP\n"
                                   "(TRUE{0})\n"
-                                  "D=-1\n"
                                   "(CONTINUE{0})\n".format(self.true_counter))
                 self.true_counter += 1
         self.push_to_stack("D")
