@@ -14,6 +14,8 @@ C_ARITHMETIC = "C_ARITHMETIC"
 COMMANDS_DICT = {'push': "C_PUSH", 'pop': 'C_POP', "label": "C_LABEL",
                  "goto": "C_GOTO", "if": "C_IF", "function": "C_FUNCTION",
                  'return': "C_RETURN", 'call': "C_CALL"}
+BLANK = ""
+COMMENT_SYMBOL = "//"
 
 
 class Parser:
@@ -48,7 +50,6 @@ class Parser:
         there is no current command.
         """
         self.line_idx += 1
-        # if self.lines <
         self.cur_line = self.lines[self.line_idx].split()
 
     def command_type(self) -> str:
@@ -63,7 +64,7 @@ class Parser:
         if self.cur_line[COMMAND] in ARITHMETICS:
             self.type = C_ARITHMETIC
         else:
-            self.type = COMMANDS_DICT[self.cur_line[COMMAND]]
+            self.type = COMMANDS_DICT.get(self.cur_line[COMMAND])
         return self.type
 
     def arg1(self) -> str:
@@ -86,3 +87,30 @@ class Parser:
             "C_FUNCTION" or "C_CALL".
         """
         return int(self.cur_line[ARG2])
+
+    def remove_line(self):
+        """
+        Removes the current line
+        """
+        del self.lines[self.line_idx]
+        self.length -= 1
+        self.line_idx -= 1
+        # self.cur_line = self.lines[self.line_idx]
+
+
+    def comments_and_spaces(self) -> bool:
+        """
+        Remove comments and spaces from the line. is the line is just comment or blank line, remove the line.
+        """
+        # if the line deleted (comment or empty) returns True, otherwise returns False
+        self.lines[self.line_idx] = self.lines[self.line_idx]
+        if self.lines[self.line_idx] == BLANK:
+            self.remove_line()
+            return True
+        comment_start_idx = self.lines[self.line_idx].find(COMMENT_SYMBOL)
+        if comment_start_idx == 0:
+            self.remove_line()
+            return True
+        elif comment_start_idx > -1:
+            self.lines[self.line_idx] = self.lines[self.line_idx][:comment_start_idx]
+        return False
