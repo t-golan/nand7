@@ -128,9 +128,9 @@ class CodeWriter:
                                   "M=D\n".format(SEGMENTS.get(segment) + index))
             elif segment == "static":
                 self.pop_from_stack()
-            self.output.write("@{0}.{1}\n"
-                              "M=D\n".format(self.filename, self.static_idx))
-            self.static_idx += 1
+                self.output.write("@{0}.{1}\n"
+                                  "M=D\n".format(self.filename, self.static_idx))
+                self.static_idx += 1
 
         elif command == "C_PUSH":
             if SEGMENTS[segment] == "CONST":
