@@ -6,7 +6,7 @@ Unported License (https://creativecommons.org/licenses/by-nc-sa/3.0/).
 """
 import typing
 
-ARITHMETICS = {"add", "sub", "neg", "eq", "gt", "lt", "and", "or", "not"}
+ARITHMETICS = {"add", "sub", "neg", "eq", "gt", "lt", "and", "or", "not", "shiftleft", "shiftright"}
 COMMAND = 0
 ARG1 = 1
 ARG2 = 2
@@ -95,7 +95,6 @@ class Parser:
         del self.lines[self.line_idx]
         self.length -= 1
         self.line_idx -= 1
-        # self.cur_line = self.lines[self.line_idx]
 
 
     def comments_and_spaces(self) -> bool:
@@ -104,7 +103,7 @@ class Parser:
         """
         # if the line deleted (comment or empty) returns True, otherwise returns False
         self.lines[self.line_idx] = self.lines[self.line_idx]
-        if self.lines[self.line_idx] == BLANK:
+        if self.lines[self.line_idx] == BLANK or self.lines[self.line_idx].isspace():
             self.remove_line()
             return True
         comment_start_idx = self.lines[self.line_idx].find(COMMENT_SYMBOL)
@@ -113,4 +112,6 @@ class Parser:
             return True
         elif comment_start_idx > -1:
             self.lines[self.line_idx] = self.lines[self.line_idx][:comment_start_idx]
+            self.cur_line = self.lines[self.line_idx].split()
+
         return False

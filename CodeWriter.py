@@ -61,6 +61,10 @@ class CodeWriter:
             self.output.write("D = !D\n")
         elif command == "neg":
             self.output.write("D = -D\n")
+        elif command == "shiftleft":
+            self.output.write("D = D<<\n")
+        elif command == "shiftright":
+            self.output.write("D = D>>\n")
 
         else:  # command in ("add", "sub", "eq", "gt", "lt", "and", "or"):
             self.output.write("@SP\nM = M-1\nA = M\n")
@@ -146,10 +150,10 @@ class CodeWriter:
             elif segment == "temp" or segment == "pointer":
                 self.output.write("@{0}\n"
                                   "D=M\n".format(SEGMENTS.get(segment) + index))
+
             elif segment == "static":
                 self.output.write("@{0}.{1}\n"
                                   "D = M\n".format(self.filename, index))
-
 
             self.push_to_stack("D")
 
