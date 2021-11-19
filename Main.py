@@ -18,10 +18,10 @@ def translate_file(
         input_file (typing.TextIO): the file to translate.
         output_file (typing.TextIO): writes all output to this file.
     """
-    # Note: you can get the input file's name using:
-    # input_filename, input_extension = os.path.splitext(os.path.basename(input_file.name))
+    input_filename, input_extension = os.path.splitext(os.path.basename(input_file.name))
     parser = Parser(input_file)
     codeWriter = CodeWriter(output_file)
+    codeWriter.set_file_name(input_filename)
     while parser.has_more_commands():
         parser.advance()
         if parser.comments_and_spaces():
