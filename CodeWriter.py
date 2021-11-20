@@ -79,18 +79,47 @@ class CodeWriter:
             elif command == "or":
                 self.output.write("D = M|D\n")
             else:
-                self.output.write("D = M-D\n"
-                                  "@TRUE{0}\n".format(self.true_counter))
-                if command == "eq":
-                    self.output.write("D;JEQ\n")
-                elif command == "gt":
-                    self.output.write("D;JGT\n")
-                elif command == "lt":
-                    self.output.write("D;JLT\n")
+                if command == "lt":
+                    self.output.write("D=M\n" # overcome underflow
+                                      "@R14\n"
+                                      "M=D\n"
+                                      "@NEG{0}\n"
+                                      "D;JLT\n"
+                                      "@POS{0}\n"
+                                      "D;JGT\n"
+                                      "@TRUE{0}\n".format(self.true_counter))
+                else:
+                    self.output.write("D = M-D\n"
+                                      "@TRUE{0}\n".format(self.true_counter))
+                    if command == "eq":
+                        self.output.write("D;JEQ\n")
+                    elif command == "gt":
+                        self.output.write("D;JGT\n")
                 self.output.write("D=0\n"
                                   "@CONTINUE{0}\n"
                                   "0;JMP\n"
+                                  "(NEG{0})\n"
+                                  "@R13\n"
+                                  "D=M\n"
+                                  "@TRUE{0}\n"
+                                  "D;JGT\n"
+                                  "(POS{0})\n"
+                                  "@R13\n"
+                                  "D=M\n"
+                                  "@TRUE{0}\n"
+                                  "D;JLT\n"
+                                  "(COMP)\n"
+                                  "@R13\n"
+                                  "D=M\n"
+                                  "@R14\n"
+                                  "D=D-M\n"
+                                  "@TRUE{0}\n"
+                                  "D;JLT\n"
+                                  "D=0\n"
+                                  "@CONTINUE{0}\n"
+                                  "0;JMP\n"
                                   "(TRUE{0})\n"
+                                  "D=1\n"
                                   "(CONTINUE{0})\n".format(self.true_counter))
                 self.true_counter += 1
         self.push_to_stack("D")
