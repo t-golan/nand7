@@ -94,7 +94,14 @@ class CodeWriter:
                     if command == "eq":
                         self.output.write("D;JEQ\n")
                     elif command == "gt":
-                        self.output.write("D;JGT\n")
+                        self.output.write("D=M\n" # overcome underflow
+                                          "@R14\n"
+                                          "M=D\n"
+                                          "@POS{0}\n"
+                                          "D;JLT\n"
+                                          "@NEG{0}\n"
+                                          "D;JGT\n"
+                                          "@TRUE{0}\n".format(self.true_counter))
                 self.output.write("D=0\n"
                                   "@CONTINUE{0}\n"
                                   "0;JMP\n"
@@ -119,9 +126,9 @@ class CodeWriter:
                                   "@CONTINUE{0}\n"
                                   "0;JMP\n"
                                   "(TRUE{0})\n"
-                                  "D=1\n"
+                                  "D=-1\n"
                                   "(CONTINUE{0})\n".format(self.true_counter))
-                self.true_counter += 1
+            self.true_counter += 1
         self.push_to_stack("D")
 
     def write_push_pop(self, command: str, segment: str, index: int) -> None:
