@@ -58,3 +58,7 @@ if "__main__" == __name__:
                 continue
             with open(input_path, 'r') as input_file:
                 translate_file(input_file, output_file)
+        output_file.write("(END)\n"
+                          "@END\n"
+                          "0;JMP\n")
+        output_file.close()

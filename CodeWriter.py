@@ -22,7 +22,7 @@ class CodeWriter:
         """
         self.filename = None
         self.output = output_stream
-        self.true_counter = 0
+        self.label_counter = 0
 
     def pop_from_stack(self):
         self.output.write("@SP\n"
@@ -37,6 +37,39 @@ class CodeWriter:
                           "@SP\n"
                           "M = M+1\n".format(argToPush))
 
+    def check_x(self):
+        self.output.write("@X_NEG{0}\n"
+                            "D;JLE\n"  #jump if the x less than 0 or equal to 0
+                            # otherwise, x greater than 0. now check y:
+                            "@R13\n"
+                            "D=M\n"
+                            "@SAME_SIGN{0}\n"
+                            "D;JGT\n"  # jump if the both are positive
+                            # else - x positive and y negative, so x-y = positive
+                            "D=1\n"
+                            "@CHECK_CONDITION{0}\n"
+                            "0;JMP\n".format(self.label_counter))
+
+    def x_neg_check_y(self):
+        self.output.write("(X_NEG{0})\n"
+                            "@R13\n"
+                            "D=M\n"
+                            "@SAME_SIGN{0}\n"
+                            "D;JLE\n"  # jump if the both are negative or equal to 0
+                            # else - x negative and y positive, so x-y = negative
+                            "D=-1\n"
+                            "@CHECK_CONDITION{0}\n"
+                            "0;JMP\n".format(self.label_counter))
+
+    def x_y_same_sign(self):
+        self.output.write("(SAME_SIGN{0})\n"
+                            "@R13\n"
+                            "D=M\n"
+                            "@R14\n"
+                            "D=M-D\n"
+                            "@CHECK_CONDITION{0}\n"
+                            "0;JMP\n".format(self.label_counter))
+
     def set_file_name(self, filename: str) -> None:
         """Informs the code writer that the translation of a new VM file is
         started.
@@ -45,7 +78,6 @@ class CodeWriter:
             filename (str): The name of the VM file.
         """
         self.filename = filename
-        self.static_idx = 0
 
     def write_arithmetic(self, command: str) -> None:
         """Writes the assembly code that is the translation of the given
@@ -67,9 +99,11 @@ class CodeWriter:
             self.output.write("D = D>>\n")
 
         else:  # command in ("add", "sub", "eq", "gt", "lt", "and", "or"):
-            self.output.write("@R13\n"
+            self.output.write("@R13\n"  # save Y in R13
                               "M = D\n"
-                              "@SP\nM = M-1\nA = M\n")
+                              "@SP\n"
+                              "M = M-1\n"
+                              "A = M\n")
             if command == "add":
                 self.output.write("D = D+M\n")
             elif command == "sub":
@@ -79,56 +113,29 @@ class CodeWriter:
             elif command == "or":
                 self.output.write("D = M|D\n")
             else:
-                if command == "lt":
-                    self.output.write("D=M\n" # overcome underflow
-                                      "@R14\n"
-                                      "M=D\n"
-                                      "@NEG{0}\n"
-                                      "D;JLT\n"
-                                      "@POS{0}\n"
-                                      "D;JGT\n"
-                                      "@TRUE{0}\n".format(self.true_counter))
-                else:
-                    self.output.write("D = M-D\n"
-                                      "@TRUE{0}\n".format(self.true_counter))
-                    if command == "eq":
-                        self.output.write("D;JEQ\n")
-                    elif command == "gt":
-                        self.output.write("D=M\n" # overcome underflow
-                                          "@R14\n"
-                                          "M=D\n"
-                                          "@POS{0}\n"
-                                          "D;JLT\n"
-                                          "@NEG{0}\n"
-                                          "D;JGT\n"
-                                          "@TRUE{0}\n".format(self.true_counter))
+                self.output.write("D=M\n"  # save X in D
+                                    "@R14\n"  # save X in R14
+                                    "M=D\n")
+                self.check_x()
+                self.x_neg_check_y()
+                self.x_y_same_sign()
+
+                self.output.write("(CHECK_CONDITION{0})\n"
+                                  "@TRUE{0}\n".format(self.label_counter))
+                if command == "eq":
+                    self.output.write("D;JEQ\n")
+                elif command == "gt":
+                    self.output.write("D;JGT\n")
+                elif command == "lt":
+                    self.output.write("D;JLT\n")
                 self.output.write("D=0\n"
-                                  "@CONTINUE{0}\n"
-                                  "0;JMP\n"
-                                  "(NEG{0})\n"
-                                  "@R13\n"
-                                  "D=M\n"
-                                  "@TRUE{0}\n"
-                                  "D;JGT\n"
-                                  "(POS{0})\n"
-                                  "@R13\n"
-                                  "D=M\n"
-                                  "@TRUE{0}\n"
-                                  "D;JLT\n"
-                                  "(COMP)\n"
-                                  "@R13\n"
-                                  "D=M\n"
-                                  "@R14\n"
-                                  "D=D-M\n"
-                                  "@TRUE{0}\n"
-                                  "D;JLT\n"
-                                  "D=0\n"
                                   "@CONTINUE{0}\n"
                                   "0;JMP\n"
                                   "(TRUE{0})\n"
                                   "D=-1\n"
-                                  "(CONTINUE{0})\n".format(self.true_counter))
-            self.true_counter += 1
+                                  "(CONTINUE{0})\n".format(self.label_counter))
+
+            self.label_counter += 1
         self.push_to_stack("D")
 
     def write_push_pop(self, command: str, segment: str, index: int) -> None:
@@ -140,9 +147,7 @@ class CodeWriter:
             segment (str): the memory segment to operate on.
             index (int): the index in the memory segment.
         """
-
         # local, argument, this, and that
-
         if command == "C_POP":
             if SEGMENTS[segment] in REG_SEGMENTS:
                 # SP-

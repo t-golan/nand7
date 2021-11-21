@@ -1,7 +1,7 @@
-bartsimp, lisasimp
+rachel,tamir.golan
 ===============================================================================
-Bart Simpson, ID 011111111, bart@mail.huji.ac.il
-Lisa Simpson, ID 022222222, lisa@mail.huji.ac.il
+Rachel Assael, ID 208287334, rachel.assael@mail.huji.ac.il
+Tamir Golan, ID 208629972, tamir.golan@mail.huji.ac.il
 ===============================================================================
 
                            Project 7 - Virtual Machine (Arithmetic)
@@ -13,9 +13,9 @@ Submitted Files
 README - This file.
 VMtranslator - The executable.
 Makefile - A makefile for the project.
-Main.py - 
-Parser.py - 
-CodeWriter.py - 
+Main.py - run the whole program
+Parser.py - parse the file, line by line.
+CodeWriter.py - translate the parsed file into assembly code
 Include other files required by your project, if there are any.
 
 Remarks

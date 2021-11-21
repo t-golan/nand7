@@ -96,7 +96,6 @@ class Parser:
         self.length -= 1
         self.line_idx -= 1
 
-
     def comments_and_spaces(self) -> bool:
         """
         Remove comments and spaces from the line. is the line is just comment or blank line, remove the line.
