@@ -212,7 +212,8 @@ class CodeWriter:
             self.pop_from_stack()
             self.output.write("@{0}\n".format(label))
             self.output.write("D;JGT\n"
-                              "D;JLT\n")
+                              "@{0}\n"
+                              "D;JLT\n".format(label))
         else:
             self.output.write("@{0}\n".format(label))
             self.output.write("0;JMP\n")
