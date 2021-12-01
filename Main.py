@@ -11,8 +11,16 @@ from Parser import Parser
 from CodeWriter import CodeWriter
 
 
-def translate_file(
-        input_file: typing.TextIO, output_file: typing.TextIO) -> None:
+def init_func(output_file):
+    output_file.write("@256\n"
+                      "D=A\n"
+                      "@SP\n"
+                      "M=D\n"
+                      "@Sys.init\n"
+                      "0;JMP\n")
+
+
+def translate_file(input_file: typing.TextIO, output_file: typing.TextIO) -> None:
     """Translates a single file.
     Args:
         input_file (typing.TextIO): the file to translate.
@@ -28,12 +36,26 @@ def translate_file(
             continue
         output_file.write("//" + parser.lines[parser.line_idx] + "\n")
         command_type = parser.command_type()
+        if command_type == "C_RETURN":
+            codeWriter.return_command()
+            break
         arg1 = parser.arg1()
         if command_type == "C_ARITHMETIC":
             codeWriter.write_arithmetic(arg1)
-        elif command_type == "C_PUSH" or "C_POP":
+        elif command_type == "C_GOTO":
+            codeWriter.branching(False, arg1)
+        elif command_type == "C_IF":
+            codeWriter.branching(True, arg1)
+        elif command_type == "C_LABEL":
+            codeWriter.label(arg1)
+        else:
             arg2 = parser.arg2()
-            codeWriter.write_push_pop(command_type, arg1, arg2)
+            if command_type == "C_PUSH" or command_type == "C_POP":
+                codeWriter.write_push_pop(command_type, arg1, arg2)
+            elif command_type == "C_FUNCTION":
+                codeWriter.function_def(arg1, arg2)
+            elif command_type == "C_CALL":
+                codeWriter.function_call(arg1, arg2)
 
 
 if "__main__" == __name__:
@@ -52,6 +74,7 @@ if "__main__" == __name__:
         output_path, extension = os.path.splitext(argument_path)
     output_path += ".asm"
     with open(output_path, 'w') as output_file:
+        init_func(output_file)
         for input_path in files_to_translate:
             filename, extension = os.path.splitext(input_path)
             if extension.lower() != ".vm":

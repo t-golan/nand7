@@ -23,6 +23,7 @@ class CodeWriter:
         self.filename = None
         self.output = output_stream
         self.label_counter = 0
+        self.func_counter = 0
 
     def pop_from_stack(self):
         self.output.write("@SP\n"
@@ -30,12 +31,16 @@ class CodeWriter:
                           "A=M\n"
                           "D=M\n")
 
-    def push_to_stack(self, argToPush):
+    def put_in_d(self, var: str):
+        self.output.write("@{0}\n"
+                          "D=M\n".format(var))
+
+    def push_d_to_stack(self):
         self.output.write("@SP\n"
                           "A = M\n"
-                          "M = {0}\n"
+                          "M = D\n"
                           "@SP\n"
-                          "M = M+1\n".format(argToPush))
+                          "M = M+1\n")
 
     def check_x(self):
         self.output.write("@X_NEG{0}\n"
@@ -136,7 +141,7 @@ class CodeWriter:
                                   "(CONTINUE{0})\n".format(self.label_counter))
 
             self.label_counter += 1
-        self.push_to_stack("D")
+        self.push_d_to_stack()
 
     def write_push_pop(self, command: str, segment: str, index: int) -> None:
         """Writes the assembly code that is the translation of the given
@@ -197,7 +202,94 @@ class CodeWriter:
                 self.output.write("@{0}.{1}\n"
                                   "D = M\n".format(self.filename, index))
 
-            self.push_to_stack("D")
+            self.push_d_to_stack()
+
+    def label(self, label: str):
+        self.output.write("({0})\n".format(label))
+
+    def branching(self, conditional: bool, label: str) -> None:
+        if conditional:
+            self.pop_from_stack()
+            self.output.write("@{0}\n".format(label))
+            self.output.write("D;JGT\n"
+                              "D;JLT\n")
+        else:
+            self.output.write("@{0}\n".format(label))
+            self.output.write("0;JMP\n")
+
+    def function_def(self, func_name: str, local_num: int):
+        self.output.write("({0})\n".format(func_name))
+        self.output.write("@0\n"
+                          "D=A\n")
+        for i in range(local_num):
+            self.push_d_to_stack()
+
+    def function_call(self, func_name: str, args_num: int):
+        # push returnAddress
+        self.output.write("@{0}.return{1}\n"
+                          "D=A\n".format(func_name, self.func_counter))
+        self.push_d_to_stack()
+        # push LCL, ARG, THIS, THAT
+        for var in ["LCL", "ARG", "THIS", "THAT"]:
+            self.put_in_d(var)
+            self.push_d_to_stack()
+        # ARG = SP-5-args_num
+        self.output.write("@SP\n"
+                          "D=M\n"
+                          "@5\n"
+                          "D=D-A\n"
+                          "@{0}\n"
+                          "D=D-A\n".format(args_num))
+        self.output.write("@ARG\n"
+                          "M=D\n")
+        # LCL=SP
+        self.output.write("@SP\n"
+                          "D=M\n"
+                          "@LCL\n"
+                          "M=D\n")
+        # goto functionName
+        self.output.write("@{0}\n"
+                          "0;JMP\n".format(func_name))
+        # returnAddress
+        self.output.write("({0}.return{1})\n".format(func_name, self.func_counter))
+        self.func_counter += 1
+
+    def return_command(self):
+        # endFrame = LCL
+        self.output.write("@LCL\n"
+                          "D=M\n"
+                          "@R13\n"
+                          "M=D\n")
+        # retAddr = *(endFrame - 5)
+        self.output.write("@5\n"
+                          "A=D-A\n"
+                          "D=M\n"
+                          "@R14\n"
+                          "M=D\n")
+        # *ARG = pop()
+        self.pop_from_stack()  # D = pop()
+        self.output.write("@ARG\n"
+                          "A=M\n"
+                          "M=D\n")
+        # SP = ARG + 1
+        self.output.write("@ARG\n"
+                          "D = M+1\n"
+                          "@SP\n"
+                          "M=D\n")
+        # THAT = *(endFrame - 1)
+        for i, pointer in enumerate(["THAT", "THIS", "ARG", "LCL"]):
+            self.output.write("@R13\n"
+                              "D=M\n"
+                              "@{0}\n"
+                              "D=D-A\n"
+                              "A=D\n"
+                              "D=M\n"
+                              "@{1}\n"
+                              "M=D\n".format(i+1, pointer))
+        # goto retAddr
+        self.output.write("@R14\n"
+                          "A=M\n"
+                          "0;JMP\n")
 
     def close(self) -> None:
         """Closes the output file."""
