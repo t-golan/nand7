@@ -38,7 +38,7 @@ def translate_file(input_file: typing.TextIO, output_file: typing.TextIO) -> Non
         command_type = parser.command_type()
         if command_type == "C_RETURN":
             codeWriter.return_command()
-            break
+            continue
         arg1 = parser.arg1()
         if command_type == "C_ARITHMETIC":
             codeWriter.write_arithmetic(arg1)

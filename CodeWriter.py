@@ -210,10 +210,12 @@ class CodeWriter:
     def branching(self, conditional: bool, label: str) -> None:
         if conditional:
             self.pop_from_stack()
-            self.output.write("@{0}\n".format(label))
-            self.output.write("D;JGT\n"
+            self.output.write("D=D+1\n"
                               "@{0}\n"
-                              "D;JLT\n".format(label))
+                              "D;JEQ\n".format(label))
+            # self.output.write("D;JGT\n"
+            #                   "@{0}\n"
+            #                   "D;JLT\n".format(label))
         else:
             self.output.write("@{0}\n".format(label))
             self.output.write("0;JMP\n")
