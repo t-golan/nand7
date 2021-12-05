@@ -27,7 +27,7 @@ class CodeWriter:
 
     def pop_from_stack(self):
         self.output.write("@SP\n"
-                          "M = M - 1\n"
+                          "M = M-1\n"
                           "A=M\n"
                           "D=M\n")
 
@@ -210,18 +210,28 @@ class CodeWriter:
     def branching(self, conditional: bool, label: str) -> None:
         if conditional:
             self.pop_from_stack()
-            self.output.write("D=D+1\n"
-                              "@{0}\n"
-                              "D;JEQ\n".format(label))
-            # self.output.write("D;JGT\n"
-            #                   "@{0}\n"
-            #                   "D;JLT\n".format(label))
+            self.output.write("@{0}.{1}${2}\n".format(self.filename, self.func_name, label))
+            self.output.write("D;JGT\n"
+                              "@{0}.{1}${2}\n"
+                              "D;JLT\n".format(self.filename, self.func_name, label))
         else:
-            self.output.write("@{0}\n".format(label))
+            self.output.write("@{0}.{1}${2}\n".format(self.filename, self.func_name, label))
             self.output.write("0;JMP\n")
 
+        # if conditional:
+        #     self.pop_from_stack()
+        #     self.output.write("@{0}\n".format(label))
+        #     self.output.write("D;JGT\n"
+        #                       "@{0}\n"
+        #                       "D;JLT\n".format(label))
+        # else:
+        #     self.output.write("@{0}\n".format(label))
+        #     self.output.write("0;JMP\n")
+
+
     def function_def(self, func_name: str, local_num: int):
-        self.output.write("({0})\n".format(func_name))
+        self.func_name = func_name
+        self.output.write("({0}.{1})\n".format(self.filename, func_name))
         self.output.write("@0\n"
                           "D=A\n")
         for i in range(local_num):
@@ -229,8 +239,8 @@ class CodeWriter:
 
     def function_call(self, func_name: str, args_num: int):
         # push returnAddress
-        self.output.write("@{0}.return{1}\n"
-                          "D=A\n".format(func_name, self.func_counter))
+        self.output.write("@{0}.{1}$ret.{2}\n"
+                          "D=A\n".format(self.filename, func_name, self.func_counter))
         self.push_d_to_stack()
         # push LCL, ARG, THIS, THAT
         for var in ["LCL", "ARG", "THIS", "THAT"]:
@@ -254,8 +264,9 @@ class CodeWriter:
         self.output.write("@{0}\n"
                           "0;JMP\n".format(func_name))
         # returnAddress
-        self.output.write("({0}.return{1})\n".format(func_name, self.func_counter))
+        self.output.write("({0}.{1}$ret.{2})\n".format(self.filename, func_name, self.func_counter))
         self.func_counter += 1
+
 
     def return_command(self):
         # endFrame = LCL
