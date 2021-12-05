@@ -24,6 +24,14 @@ class CodeWriter:
         self.output = output_stream
         self.label_counter = 0
         self.func_counter = 0
+        self.func_name = ""
+
+        self.output.write("@256\n"
+                              "D=A\n"
+                              "@SP\n"
+                              "M=D\n"
+                              "@Sys.Sys.init\n"
+                              "0;JMP\n")
 
     def pop_from_stack(self):
         self.output.write("@SP\n"
@@ -205,7 +213,8 @@ class CodeWriter:
             self.push_d_to_stack()
 
     def label(self, label: str):
-        self.output.write("({0})\n".format(label))
+        self.output.write("({0}.{1}${2})\n".format(self.filename, self.func_name, label))
+        # self.output.write("({0})\n".format(label))
 
     def branching(self, conditional: bool, label: str) -> None:
         if conditional:
@@ -261,8 +270,8 @@ class CodeWriter:
                           "@LCL\n"
                           "M=D\n")
         # goto functionName
-        self.output.write("@{0}\n"
-                          "0;JMP\n".format(func_name))
+        self.output.write("@{0}.{1}\n"
+                          "0;JMP\n".format(self.filename, func_name))
         # returnAddress
         self.output.write("({0}.{1}$ret.{2})\n".format(self.filename, func_name, self.func_counter))
         self.func_counter += 1
