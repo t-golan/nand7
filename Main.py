@@ -11,13 +11,13 @@ from Parser import Parser
 from CodeWriter import CodeWriter
 
 
-def init_func(output_file):
-    output_file.write("@256\n"
-                      "D=A\n"
-                      "@SP\n"
-                      "M=D\n"
-                      "@Sys.init\n"
-                      "0;JMP\n")
+# def init_func(output_file):
+#     output_file.write("@256\n"
+#                       "D=A\n"
+#                       "@SP\n"
+#                       "M=D\n"
+#                       "@Sys.init\n"
+#                       "0;JMP\n")
 
 
 def translate_file(input_file: typing.TextIO, output_file: typing.TextIO) -> None:
@@ -26,10 +26,7 @@ def translate_file(input_file: typing.TextIO, output_file: typing.TextIO) -> Non
         input_file (typing.TextIO): the file to translate.
         output_file (typing.TextIO): writes all output to this file.
     """
-    input_filename, input_extension = os.path.splitext(os.path.basename(input_file.name))
     parser = Parser(input_file)
-    codeWriter = CodeWriter(output_file)
-    codeWriter.set_file_name(input_filename)
     while parser.has_more_commands():
         parser.advance()
         if parser.comments_and_spaces():
@@ -74,9 +71,10 @@ if "__main__" == __name__:
         output_path, extension = os.path.splitext(argument_path)
     output_path += ".asm"
     with open(output_path, 'w') as output_file:
-        init_func(output_file)
+        codeWriter = CodeWriter(output_file)
         for input_path in files_to_translate:
-            filename, extension = os.path.splitext(input_path)
+            filename, extension = os.path.splitext(os.path.basename(input_path))
+            codeWriter.set_file_name(filename)
             if extension.lower() != ".vm":
                 continue
             with open(input_path, 'r') as input_file:
